@@ -4,17 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
-import { Mail, Linkedin, ExternalLink, Send } from 'lucide-react';
+import { Mail, Linkedin, ExternalLink, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { contactAPI, profileAPI } from '../services/api';
 
 const ContactSection = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const [profile, setProfile] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -34,6 +37,22 @@ const ContactSection = () => {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      setLoadingProfile(true);
+      const profileData = await profileAPI.get();
+      setProfile(profileData);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -46,14 +65,22 @@ const ContactSection = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Mock form submission
-    setTimeout(() => {
+    try {
+      await contactAPI.create(formData);
       toast.success('Message sent successfully! I\'ll get back to you soon.', {
         duration: 3000,
       });
       setFormData({ name: '', email: '', message: '' });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message. Please try again.');
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
+  };
+
+  const handleExternalLink = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -121,11 +148,11 @@ const ContactSection = () => {
                 <Button 
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       Sending...
                     </div>
                   ) : (
@@ -149,13 +176,23 @@ const ContactSection = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">Email</h3>
-                    <p className="text-gray-600">ashin.krishna@example.com</p>
+                    <p className="text-gray-600">
+                      {loadingProfile ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading...
+                        </span>
+                      ) : (
+                        profile?.email || 'ashin.krishna@example.com'
+                      )}
+                    </p>
                   </div>
                 </div>
                 <Button 
                   variant="outline"
                   className="w-full border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-colors"
-                  onClick={() => window.open('mailto:ashin.krishna@example.com')}
+                  onClick={() => handleExternalLink(`mailto:${profile?.email || 'ashin.krishna@example.com'}`)}
+                  disabled={loadingProfile}
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
                   Send Email
@@ -177,7 +214,8 @@ const ContactSection = () => {
                 <Button 
                   variant="outline"
                   className="w-full border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                  onClick={() => window.open('https://linkedin.com/in/ashin-krishna')}
+                  onClick={() => handleExternalLink(profile?.linkedin || 'https://linkedin.com/in/ashin-krishna')}
+                  disabled={loadingProfile}
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
                   View Profile
@@ -199,7 +237,8 @@ const ContactSection = () => {
                 <Button 
                   variant="outline"
                   className="w-full border-pink-200 hover:bg-pink-50 hover:border-pink-300 transition-colors"
-                  onClick={() => window.open('https://behance.net/ashin-krishna')}
+                  onClick={() => handleExternalLink(profile?.behance || 'https://behance.net/ashin-krishna')}
+                  disabled={loadingProfile}
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
                   View Portfolio

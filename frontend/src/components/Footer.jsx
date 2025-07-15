@@ -1,11 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Separator } from './ui/separator';
+import { Loader2 } from 'lucide-react';
+import { profileAPI } from '../services/api';
 
 const Footer = () => {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const currentYear = new Date().getFullYear();
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      const profileData = await profileAPI.get();
+      setProfile(profileData);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const scrollToSection = (sectionId) => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleExternalLink = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -18,27 +42,36 @@ const Footer = () => {
               Portfolio 2025
             </h3>
             <p className="text-gray-400 mb-4">
-              By Ashin Krishna - Creating exceptional visual designs that make an impact.
+              By {profile?.name || 'Ashin Krishna'} - Creating exceptional visual designs that make an impact.
             </p>
             <div className="flex space-x-4">
-              <button 
-                onClick={() => window.open('mailto:ashin.krishna@example.com')}
-                className="text-gray-400 hover:text-purple-400 transition-colors"
-              >
-                Email
-              </button>
-              <button 
-                onClick={() => window.open('https://linkedin.com/in/ashin-krishna')}
-                className="text-gray-400 hover:text-purple-400 transition-colors"
-              >
-                LinkedIn
-              </button>
-              <button 
-                onClick={() => window.open('https://behance.net/ashin-krishna')}
-                className="text-gray-400 hover:text-purple-400 transition-colors"
-              >
-                Behance
-              </button>
+              {loading ? (
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Loading...</span>
+                </div>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => handleExternalLink(`mailto:${profile?.email || 'ashin.krishna@example.com'}`)}
+                    className="text-gray-400 hover:text-purple-400 transition-colors"
+                  >
+                    Email
+                  </button>
+                  <button 
+                    onClick={() => handleExternalLink(profile?.linkedin || 'https://linkedin.com/in/ashin-krishna')}
+                    className="text-gray-400 hover:text-purple-400 transition-colors"
+                  >
+                    LinkedIn
+                  </button>
+                  <button 
+                    onClick={() => handleExternalLink(profile?.behance || 'https://behance.net/ashin-krishna')}
+                    className="text-gray-400 hover:text-purple-400 transition-colors"
+                  >
+                    Behance
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -98,7 +131,7 @@ const Footer = () => {
 
         <div className="mt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm">
-            © {currentYear} Ashin Krishna. All rights reserved.
+            © {currentYear} {profile?.name || 'Ashin Krishna'}. All rights reserved.
           </p>
           <p className="text-gray-400 text-sm mt-2 md:mt-0">
             Designed with passion and creativity
