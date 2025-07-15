@@ -278,11 +278,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Project Management API Endpoints"
-    - "Contact Form API Endpoints"
-    - "Profile Management API Endpoints"
-    - "Database Initialization with Sample Data"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
